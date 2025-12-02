@@ -128,9 +128,10 @@ class StealthBot:
         for attempt in range(max_retries):
             page_source = self.sb.get_page_source()
             
-            # Check if we already passed (challenge indicators gone)
-            # "OH YEAH, you passed!" is no longer on nowsecure.nl
-            # We rely on the absence of challenge text in the loop condition below.
+            # Check if we already passed
+            if "NOWSECURE" in self.sb.get_text("body"):
+                print("[StealthBot] Challenge passed!")
+                return
 
 
             # Simple heuristic detection (case-insensitive)
@@ -149,10 +150,10 @@ class StealthBot:
                 except Exception as e:
                     print(f"[StealthBot] standard captcha click failed: {e}")
                 
-                # Check success again (if challenge text is gone, the loop will handle it next iteration)
-                # if "OH YEAH, you passed!" in self.sb.get_page_source():
-                #     print("[StealthBot] Challenge passed after interaction!")
-                #     return
+                # Check success again
+                if "NOWSECURE" in self.sb.get_text("body"):
+                    print("[StealthBot] Challenge passed after interaction!")
+                    return
 
                 
                 # 2. Fallback: Try clicking the container directly if specialized method failed

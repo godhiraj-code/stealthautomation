@@ -27,15 +27,23 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install .
-        pip install seleniumbase
+        pip install seleniumbase playwright
 
     - name: Install SeleniumBase drivers
       run: |
         seleniumbase install chromedriver
 
-    - name: Run tests
+    - name: Install Playwright browsers
+      run: |
+        playwright install chromium
+
+    - name: Run tests (StealthBot Demo)
       run: |
         python examples/robust_demo.py
+
+    - name: Run Benchmark Comparison
+      run: |
+        python examples/benchmark_comparison.py
 
     - name: Upload screenshots
       if: always()

@@ -20,6 +20,18 @@ It allows you to focus on *what* your bot needs to do, rather than *how* to keep
 - **Smart Clicking**: `smart_click(selector)` attempts human-like clicks, with fallbacks to standard and JS clicks.
 - **Challenge Solving**: Automatically detects and attempts to solve Cloudflare Turnstile and other challenges.
 
+## Benchmark Comparison (Linux CI Environment)
+
+We compared **StealthBot** against standard **Selenium** and **Playwright** in a GitHub Actions (Linux) environment targeting a protected site (`nowsecure.nl`).
+
+| Tool | Status | Time | Notes |
+|------|--------|------|-------|
+| **Selenium** | FAIL | 0.50s | Crashed (No display for headed mode) |
+| **Playwright** | FAIL | 0.36s | Crashed (No display for headed mode) |
+| **StealthBot** | **PASS** | **3.65s** | **Auto-configured Xvfb & Passed Challenge** |
+
+*Note: Standard drivers fail in CI because they must run in "Headed" mode to avoid detection, but Linux servers have no display. StealthBot automatically handles this by creating a virtual display (Xvfb).*
+
 ## Installation
 
 ```bash

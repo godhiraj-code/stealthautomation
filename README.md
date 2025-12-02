@@ -1,5 +1,7 @@
 # SB Stealth Wrapper
 
+[![CI](https://github.com/godhiraj-code/stealthautomation/actions/workflows/ci.yml/badge.svg)](https://github.com/godhiraj-code/stealthautomation/actions/workflows/ci.yml)
+
 A robust, 'plug-and-play' wrapper around **SeleniumBase UC Mode** for stealth web automation.
 
 ## Why Use This Package?

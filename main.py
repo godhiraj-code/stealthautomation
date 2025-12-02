@@ -12,8 +12,9 @@ if __name__ == "__main__":
         # Verify we passed the challenge
         try:
             # Wait longer and print what we see
-            bot.sb.wait_for_text("OH YEAH, you passed!", timeout=30)
-            print("SUCCESS: Passed nowsecure.nl challenge!")
+            # "OH YEAH, you passed!" is no longer present. We check for "NOWSECURE".
+            bot.sb.wait_for_text("NOWSECURE", timeout=30)
+            print("SUCCESS: Passed nowsecure.nl challenge (verified 'NOWSECURE' text)!")
         except Exception as e:
             print(f"FAILURE: Did not see success message on nowsecure.nl. Error: {e}")
             print("Visible Text on Page:")

@@ -9,7 +9,7 @@ class StealthBot:
     Abstracts complexity into a single class.
     """
 
-    def __init__(self, headless=False, proxy=None, screenshot_path="debug_screenshots"):
+    def __init__(self, headless=False, proxy=None, screenshot_path="debug_screenshots", success_criteria=None):
         """
         Initialize the StealthBot.
 
@@ -17,10 +17,13 @@ class StealthBot:
             headless (bool): Whether to run in headless mode. Defaults to False.
             proxy (str): Optional proxy string (e.g., "user:pass@host:port").
             screenshot_path (str): Path to save debug screenshots.
+            success_criteria (str): Optional text to wait for to confirm success (e.g., "Welcome").
+                                  If None, bot relies on challenge disappearance.
         """
         self.headless = headless
         self.proxy = proxy
         self.screenshot_path = screenshot_path
+        self.success_criteria = success_criteria
         self.sb = None
         
         # Ensure screenshot directory exists
@@ -79,9 +82,7 @@ class StealthBot:
         self.sb.wait_for_element("body", timeout=15)
         
         # Check for common challenges (case-insensitive)
-        page_source = self.sb.get_page_source().lower()
-        if "challenge" in page_source or "turnstile" in page_source or "just a moment" in page_source:
-             self._handle_challenges()
+        self._handle_challenges()
 
     def smart_click(self, selector):
         """
@@ -127,46 +128,53 @@ class StealthBot:
         max_retries = 3
         for attempt in range(max_retries):
             page_source = self.sb.get_page_source()
-            
-            # Check if we already passed
-            if "NOWSECURE" in self.sb.get_text("body"):
-                print("[StealthBot] Challenge passed!")
-                return
-
-
-            # Simple heuristic detection (case-insensitive)
             src_lower = page_source.lower()
-            if "challenge" in src_lower or "turnstile" in src_lower or "just a moment" in src_lower:
+            
+            # Common keywords for Cloudflare / Turnstile / Captchas
+            challenge_indicators = ["challenge", "turnstile", "just a moment", "verify you are human"]
+            is_challenge_present = any(indicator in src_lower for indicator in challenge_indicators)
+
+            if is_challenge_present:
                 print(f"[StealthBot] Challenge detected (Attempt {attempt+1}/{max_retries}). Engaging evasion protocols...")
                 
-                # Wait a bit for animations/loading
+                # Wait a bit for animations/loading/rendering
                 time.sleep(2)
                 
                 try:
-                    # 1. Try SeleniumBase's specialized captcha clicker
+                    # Try SeleniumBase's specialized captcha clicker
                     self.sb.uc_gui_click_captcha()
                     print("[StealthBot] Captcha interaction attempted (uc_gui_click_captcha).")
                     time.sleep(4) # Wait for reaction
                 except Exception as e:
                     print(f"[StealthBot] standard captcha click failed: {e}")
                 
-                # Check success again
-                if "NOWSECURE" in self.sb.get_text("body"):
-                    print("[StealthBot] Challenge passed after interaction!")
-                    return
-
-                
-                # 2. Fallback: Try clicking the container directly if specialized method failed
+                # Fallback: Try clicking the container directly if specialized method failed
                 try:
-                    print("[StealthBot] Attempting fallback click on .cf-turnstile...")
                     if self.sb.is_element_visible(".cf-turnstile"):
+                        print("[StealthBot] Attempting fallback click on .cf-turnstile...")
                         self.sb.uc_click(".cf-turnstile")
                         time.sleep(4)
                 except Exception:
                     pass
+
+                # If we have run out of retries and still see challenge, we warn.
+                # If we loop back, strict Mode will re-check criteria or challenge indicators.
             else:
-                # No challenge detected
-                return
+                # No challenge detected. Now checks success criteria if defined.
+                if self.success_criteria:
+                    if self.sb.is_text_visible(self.success_criteria):
+                        print(f"[StealthBot] Success criteria '{self.success_criteria}' met!")
+                        return
+                    else:
+                        # No challenge seen, but success criteria NOT met.
+                        # Could be loading? We'll wait a brief moment in the loop or just return if naive.
+                        # Better: Continue to ensure we don't miss a late-loading challenge, 
+                        # but we need a break condition so we don't loop forever if it's just a slow site.
+                        pass 
+                else:
+                    # No criteria, no challenge -> Assume success.
+                    print("[StealthBot] No challenge detected. Assuming access granted.")
+                    return
         
         print("[StealthBot] Warning: Max retries reached for challenge solving.")
 

@@ -3,7 +3,8 @@ from sb_stealth_wrapper import StealthBot
 # Usage Example
 if __name__ == "__main__":
     # 1. Initialize with context manager (auto-handles setup/teardown)
-    with StealthBot(headless=False) as bot:
+    # We pass 'NOWSECURE' as the specific success criteria for this demo site.
+    with StealthBot(headless=False, success_criteria="NOWSECURE") as bot:
         # 2. Navigate safely to a protected site
         print("--- Testing Protected Site (nowsecure.nl) ---")
         bot.safe_get("https://nowsecure.nl")

@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="sb-stealth-wrapper",
-    version="0.1.2",
+    version="0.2.0",
     description="A robust, plug-and-play wrapper around SeleniumBase UC Mode for stealth web automation.",
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",

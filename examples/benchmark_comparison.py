@@ -91,7 +91,7 @@ def test_stealthbot():
     start_time = time.time()
     
     try:
-        with StealthBot(headless=False) as bot:
+        with StealthBot(headless=False, success_criteria="NOWSECURE") as bot:
             bot.safe_get(URL)
             
             # Check for bot signal

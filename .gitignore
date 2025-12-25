@@ -140,5 +140,7 @@ cython_debug/
 
 # Project specific
 debug_screenshots/
+debug_page_source.html
+downloaded_files/
 *.log
 nowsecure_debug.html

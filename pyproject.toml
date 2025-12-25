@@ -1,0 +1,63 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sb-stealth-wrapper"
+version = "0.3.0"
+description = "A robust, plug-and-play wrapper around SeleniumBase UC Mode for stealth web automation."
+readme = "README.md"
+license = {text = "MIT"}
+authors = [
+    {name = "Dhiraj Das", email = "dhirajdas.666@gmail.com"}
+]
+requires-python = ">=3.8"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Testing",
+    "Topic :: Internet :: WWW/HTTP :: Browsers",
+]
+keywords = ["selenium", "stealth", "automation", "bot-detection", "cloudflare", "turnstile", "web-scraping", "testing"]
+dependencies = [
+    "seleniumbase>=4.20.0",
+]
+
+[project.urls]
+Homepage = "https://www.dhirajdas.dev"
+Repository = "https://github.com/godhiraj-code/stealthautomation"
+Documentation = "https://github.com/godhiraj-code/stealthautomation#readme"
+"Bug Tracker" = "https://github.com/godhiraj-code/stealthautomation/issues"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "black>=23.0.0",
+    "isort>=5.12.0",
+    "mypy>=1.0.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["sb_stealth_wrapper*"]
+
+[tool.black]
+line-length = 100
+target-version = ["py38", "py39", "py310", "py311", "py312"]
+
+[tool.isort]
+profile = "black"
+line_length = 100
+
+[tool.mypy]
+python_version = "3.8"
+warn_return_any = true
+warn_unused_configs = true

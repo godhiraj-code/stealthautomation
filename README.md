@@ -138,6 +138,6 @@ If the bot keeps clicking the challenge but it never solves:
 
 ## Credits & Disclaimer
 
-Built on top of the incredible [SeleniumBase](https://github.com/seleniumbase/SeleniumBase) by **Michael Mintz**.
+Created by **[Dhiraj Das](https://www.dhirajdas.dev)** • Built on top of the incredible [SeleniumBase](https://github.com/seleniumbase/SeleniumBase) by **Michael Mintz**.
 
 **Ethical Use Only**: This tool is for testing your own infrastructure or sites you have permission to test. Do not use for unauthorized scraping or bypassing security controls on 3rd party services.

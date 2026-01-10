@@ -10,8 +10,10 @@ Modern web automation often requires complex configurations to bypass bot detect
 
 It handles:
 - **Auto-Evasion**: Automatically configures the environment for maximum stealth (e.g., using `xvfb` on Linux).
-- **Smart Interactions**: Provides human-like clicking and navigation methods that automatically handle scrolling, waiting, and captcha detection.
-- **Generic Challenge Management**: Detects common challenge screens and attempts to solve them, while allowing you to define custom success criteria for any site.
+- **Behavioral Biometrics**: Simulates human-like **Bezier curve mouse movements** and variable typing speeds with occasional typos to defeat behavioral analysis.
+- **Active Fingerprint Evasion**: Proactively injects "poisoned" Canvas and AudioContext data to create unique, consistent fingerprints that mask the standard WebDriver footprint.
+- **Smart Interactions**: Provides interactions that automatically handle scrolling, waiting, and challenge detection.
+- **Generic Challenge Management**: Detects common challenge screens and attempts to solve them.
 
 It allows you to focus on *what* your bot needs to do, rather than *how* to keep it undetected.
 
@@ -101,6 +103,32 @@ A stealthy alternative to standard clicks.
     5. **Fallbacks**: If the human click fails, it tries a standard Selenium click, then a JavaScript click, ensuring high reliability.
 
 ---
+
+---
+
+## 🔧 Advanced Modular Usage (New in v0.4.0)
+
+StealthBot now uses a **Strategy Pattern**, allowing you to customize its behavior.
+
+```python
+from sb_stealth_wrapper import StealthBot
+from sb_stealth_wrapper.strategies.input import HumanInputStrategy
+
+# 1. Custom Input Strategy
+# You can tweak specific input behaviors if needed for different target sites.
+my_input = HumanInputStrategy() 
+
+# 2. Inject Strategies
+with StealthBot(input_strategy=my_input) as bot:
+    bot.safe_get("https://high-security-site.com")
+    # All clicks now use Bezier curves automatically
+    bot.smart_click("#login")
+```
+
+The bot comes with powerful defaults:
+- **CanvasPoisoningStrategy**: Randomizes canvas hash per session.
+- **AudioContextNoiseStrategy**: Randomizes audio fingerprint.
+- **HumanInputStrategy**: Physics-based mouse movements and human-like typing.
 
 ## 🧠 Core Concepts & Best Practices
 

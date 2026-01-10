@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "sb-stealth-wrapper"
-version = "0.3.0"
+version = "0.4.0"
 description = "A robust, plug-and-play wrapper around SeleniumBase UC Mode for stealth web automation."
 readme = "README.md"
 license = {text = "MIT"}

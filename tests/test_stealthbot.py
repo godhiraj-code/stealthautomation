@@ -91,24 +91,36 @@ class TestStealthBotInit:
         StealthBot(screenshot_path=screenshot_dir)
         assert os.path.exists(screenshot_dir)
 
-    @patch("sb_stealth_wrapper.platform.system")
-    def test_linux_detection_enables_xvfb(self, mock_system: MagicMock) -> None:
+    @patch("sb_stealth_wrapper.driver.platform.system")
+    @patch("sb_stealth_wrapper.driver.SB")
+    def test_linux_detection_enables_xvfb(self, mock_sb: MagicMock, mock_system: MagicMock) -> None:
         """Test that Linux detection enables Xvfb and forces headed mode."""
         mock_system.return_value = "Linux"
+        
+        # We need to initialize the bot and enter the context to trigger driver.initialize()
         bot = StealthBot(headless=True)
+        with bot:
+            pass
+            
+        # Verify SB was initialized with correct arguments (xvfb=True, headless=False)
+        mock_sb.assert_called_once()
+        _, kwargs = mock_sb.call_args
+        assert kwargs["xvfb"] is True
+        assert kwargs["headless"] is False
 
-        assert bot.is_linux is True
-        assert bot.xvfb is True
-        assert bot.headless is False  # Should be forced to False
-
-    @patch("sb_stealth_wrapper.platform.system")
-    def test_windows_detection_no_xvfb(self, mock_system: MagicMock) -> None:
+    @patch("sb_stealth_wrapper.driver.platform.system")
+    @patch("sb_stealth_wrapper.driver.SB")
+    def test_windows_detection_no_xvfb(self, mock_sb: MagicMock, mock_system: MagicMock) -> None:
         """Test that Windows doesn't enable Xvfb."""
         mock_system.return_value = "Windows"
+        
         bot = StealthBot(headless=False)
+        with bot:
+            pass
 
-        assert bot.is_linux is False
-        assert bot.xvfb is False
+        mock_sb.assert_called_once()
+        _, kwargs = mock_sb.call_args
+        assert kwargs["xvfb"] is False
 
 
 class TestStealthBotContextManager:

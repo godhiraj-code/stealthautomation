@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, feature/stealth-upgrades ]
   pull_request:
     branches: [ main ]
 
@@ -63,9 +63,13 @@ jobs:
       run: |
         playwright install chromium
 
-    - name: Run StealthBot Demo
+    - name: Run StealthBot Demo (Legacy)
       run: |
         python examples/robust_demo.py
+
+    - name: Run Stealth Showcase (Modular/Behavioral)
+      run: |
+        python examples/stealth_showcase.py
 
     - name: Run Benchmark Comparison
       run: |

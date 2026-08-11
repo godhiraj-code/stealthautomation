@@ -1,14 +1,18 @@
 import logging
 from typing import Any
+
 from sb_stealth_wrapper.strategies.base import EvasionStrategy
 
 logger = logging.getLogger(__name__)
 
+
 class CanvasPoisoningStrategy(EvasionStrategy):
     """
-    Injects JS to add noise to Canvas rendering, ensuring unique but consistent
-    fingerprints that differ from standard Selenium/Driver values.
+    Experimental opt-in strategy that adds non-deterministic canvas noise.
+
+    This is not enabled by default and does not promise a stable fingerprint.
     """
+
     def apply(self, driver: Any) -> None:
         logger.debug("Applying Canvas Poisoning...")
         js_code = """
@@ -45,13 +49,15 @@ class CanvasPoisoningStrategy(EvasionStrategy):
             driver.execute_cdp_cmd("Page.addScriptToEvaluateOnNewDocument", {"source": js_code})
             logger.debug("Canvas poisoning injected via CDP")
         except:
-             # Fallback for non-CDP drivers
-             driver.execute_script(js_code)
+            # Fallback for non-CDP drivers
+            driver.execute_script(js_code)
+
 
 class AudioContextNoiseStrategy(EvasionStrategy):
     """
     Injects JS to add noise to AudioContext frequency data.
     """
+
     def apply(self, driver: Any) -> None:
         logger.debug("Applying Audio Context Noise...")
         js_code = """
@@ -74,11 +80,13 @@ class AudioContextNoiseStrategy(EvasionStrategy):
         except:
             driver.execute_script(js_code)
 
+
 class CompositeEvasionStrategy(EvasionStrategy):
     """Combines multiple evasion strategies."""
+
     def __init__(self, strategies=None):
-        self.strategies = strategies or [CanvasPoisoningStrategy(), AudioContextNoiseStrategy()]
-        
+        self.strategies = [] if strategies is None else list(strategies)
+
     def apply(self, driver: Any) -> None:
         for strategy in self.strategies:
             strategy.apply(driver)

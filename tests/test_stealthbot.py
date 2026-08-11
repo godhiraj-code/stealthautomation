@@ -15,9 +15,11 @@ from sb_stealth_wrapper import (
     ChallengeNotSolvedError,
     StealthBot,
     StealthBotError,
+    SuccessCriteriaNotMetError,
     __author__,
     __version__,
 )
+from sb_stealth_wrapper.strategies.evasion import CompositeEvasionStrategy
 
 
 class TestModuleMetadata:
@@ -96,12 +98,12 @@ class TestStealthBotInit:
     def test_linux_detection_enables_xvfb(self, mock_sb: MagicMock, mock_system: MagicMock) -> None:
         """Test that Linux detection enables Xvfb and forces headed mode."""
         mock_system.return_value = "Linux"
-        
+
         # We need to initialize the bot and enter the context to trigger driver.initialize()
         bot = StealthBot(headless=True)
         with bot:
             pass
-            
+
         # Verify SB was initialized with correct arguments (xvfb=True, headless=False)
         mock_sb.assert_called_once()
         _, kwargs = mock_sb.call_args
@@ -113,7 +115,7 @@ class TestStealthBotInit:
     def test_windows_detection_no_xvfb(self, mock_sb: MagicMock, mock_system: MagicMock) -> None:
         """Test that Windows doesn't enable Xvfb."""
         mock_system.return_value = "Windows"
-        
+
         bot = StealthBot(headless=False)
         with bot:
             pass
@@ -178,7 +180,112 @@ class TestChallengeDetection:
     def test_challenge_indicator_detection(self, page_content: str, expected: bool) -> None:
         """Test that challenge indicators are correctly detected."""
         src_lower = page_content.lower()
-        is_challenge = any(
-            indicator in src_lower for indicator in StealthBot.CHALLENGE_INDICATORS
-        )
+        is_challenge = any(indicator in src_lower for indicator in StealthBot.CHALLENGE_INDICATORS)
         assert is_challenge == expected
+
+    @patch("sb_stealth_wrapper.time.sleep", return_value=None)
+    def test_exhausted_challenge_raises_typed_error(self, _mock_sleep: MagicMock) -> None:
+        bot = StealthBot()
+        bot.sb = MagicMock()
+        bot.sb.get_page_source.return_value = "Just a moment - verify you are human"
+        bot.sb.is_element_visible.return_value = False
+
+        with pytest.raises(ChallengeNotSolvedError, match="3 recovery attempts"):
+            bot._handle_challenges()
+
+        assert bot.sb.uc_gui_click_captcha.call_count == bot.MAX_CHALLENGE_RETRIES
+        assert bot.sb.get_page_source.call_count == bot.MAX_CHALLENGE_RETRIES + 1
+
+    @patch("sb_stealth_wrapper.time.sleep", return_value=None)
+    def test_missing_success_criteria_raises_distinct_error(self, _mock_sleep: MagicMock) -> None:
+        bot = StealthBot(success_criteria="Dashboard")
+        bot.sb = MagicMock()
+        bot.sb.get_page_source.return_value = "ordinary page"
+        bot.sb.is_text_visible.return_value = False
+
+        with pytest.raises(SuccessCriteriaNotMetError, match="Dashboard"):
+            bot._handle_challenges()
+
+        assert bot.sb.get_page_source.call_count == bot.MAX_CHALLENGE_RETRIES + 1
+
+    @patch("sb_stealth_wrapper.time.sleep", return_value=None)
+    def test_success_after_final_recovery_is_verified(self, _mock_sleep: MagicMock) -> None:
+        bot = StealthBot()
+        bot.sb = MagicMock()
+        bot.sb.get_page_source.side_effect = [
+            "Just a moment",
+            "Just a moment",
+            "Just a moment",
+            "ordinary page",
+        ]
+        bot.sb.is_element_visible.return_value = False
+
+        bot._handle_challenges()
+
+        assert bot.sb.uc_gui_click_captcha.call_count == bot.MAX_CHALLENGE_RETRIES
+        assert bot.sb.get_page_source.call_count == bot.MAX_CHALLENGE_RETRIES + 1
+
+    @patch("sb_stealth_wrapper.time.sleep", return_value=None)
+    def test_delayed_success_criteria_is_polled(self, _mock_sleep: MagicMock) -> None:
+        bot = StealthBot(success_criteria="Dashboard")
+        bot.sb = MagicMock()
+        bot.sb.get_page_source.return_value = "ordinary page"
+        bot.sb.is_text_visible.side_effect = [False, False, True]
+
+        bot._handle_challenges()
+
+        assert bot.sb.is_text_visible.call_count == 3
+
+    def test_visible_success_criteria_returns_normally(self) -> None:
+        bot = StealthBot(success_criteria="Dashboard")
+        bot.sb = MagicMock()
+        bot.sb.get_page_source.return_value = "ordinary page"
+        bot.sb.is_text_visible.return_value = True
+
+        bot._handle_challenges()
+
+
+class TestExplicitClickFailures:
+    def test_fallback_click_raises_when_every_attempt_fails(self) -> None:
+        bot = StealthBot()
+        bot.sb = MagicMock()
+        bot.sb.get_page_source.return_value = "ordinary page"
+        bot.sb.click.side_effect = RuntimeError("click failed")
+        bot.sb.js_click.side_effect = RuntimeError("js click failed")
+
+        with pytest.raises(StealthBotError, match="Could not click selector"):
+            bot._fallback_click("#submit")
+
+        assert bot.sb.click.call_count == 2
+
+    def test_javascript_fallback_success_returns_normally(self) -> None:
+        bot = StealthBot()
+        bot.sb = MagicMock()
+        bot.sb.click.side_effect = RuntimeError("click failed")
+
+        bot._fallback_click("#submit")
+
+        bot.sb.js_click.assert_called_once_with("#submit")
+
+    def test_public_smart_click_propagates_typed_failure(self) -> None:
+        bot = StealthBot()
+        bot.sb = MagicMock()
+        bot.sb.get_page_source.return_value = "ordinary page"
+        bot.input_strategy = MagicMock()
+        bot.input_strategy.click.side_effect = RuntimeError("strategy failed")
+        bot.sb.click.side_effect = RuntimeError("click failed")
+        bot.sb.js_click.side_effect = RuntimeError("js click failed")
+
+        with pytest.raises(StealthBotError, match="Could not click selector"):
+            bot.smart_click("#submit")
+
+
+def test_navigation_log_destination_redacts_sensitive_url_components() -> None:
+    safe = StealthBot._safe_destination_for_log(
+        "https://user:password@example.com/private/path?token=secret#fragment"
+    )
+    assert safe == "https://example.com"
+
+
+def test_fingerprint_mutation_is_disabled_by_default() -> None:
+    assert CompositeEvasionStrategy().strategies == []

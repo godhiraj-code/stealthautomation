@@ -1,171 +1,124 @@
 # SB Stealth Wrapper
 
 [![CI](https://github.com/godhiraj-code/stealthautomation/actions/workflows/ci.yml/badge.svg)](https://github.com/godhiraj-code/stealthautomation/actions/workflows/ci.yml)
+[![PyPI](https://img.shields.io/pypi/v/sb-stealth-wrapper.svg)](https://pypi.org/project/sb-stealth-wrapper/)
 
-A robust, 'plug-and-play' wrapper around **SeleniumBase UC Mode** for stealth web automation.
+A small reliability wrapper around SeleniumBase UC Mode for **authorized browser testing** on applications that use modern bot defenses.
 
-## 🚀 Why Use This Package?
+SB Stealth Wrapper standardizes browser setup, bounded challenge recovery, explicit failure behavior, fallback clicks, screenshots, and variable input timing. It does not guarantee that a site will accept automated traffic, solve every challenge, or make automation undetectable.
 
-Modern web automation often requires complex configurations to bypass bot detection systems like Cloudflare Turnstile. **SB Stealth Wrapper** abstracts this complexity into a single, easy-to-use class.
-
-It handles:
-- **Auto-Evasion**: Automatically configures the environment for maximum stealth (e.g., using `xvfb` on Linux).
-- **Behavioral Biometrics**: Simulates human-like **Bezier curve mouse movements** and variable typing speeds with occasional typos to defeat behavioral analysis.
-- **Active Fingerprint Evasion**: Proactively injects "poisoned" Canvas and AudioContext data to create unique, consistent fingerprints that mask the standard WebDriver footprint.
-- **Smart Interactions**: Provides interactions that automatically handle scrolling, waiting, and challenge detection.
-- **Generic Challenge Management**: Detects common challenge screens and attempts to solve them.
-
-It allows you to focus on *what* your bot needs to do, rather than *how* to keep it undetected.
-
----
-
-## 📦 Installation
-
-### 1. Install via pip
+## Install
 
 ```bash
-pip install sb-stealth-wrapper
+python -m pip install sb-stealth-wrapper
 ```
 
-### 2. Prerequisites (Linux / Docker Only)
-
-If you are running this on a Linux server or inside a Docker container (like GitHub Actions), you **MUST** install `xvfb`.
-
-**Why?**
-Stealth automation works best in "headed" mode (where the browser GUI is visible). Native "headless" mode is easily detected by anti-bots. `xvfb` creates a "virtual display" so the browser thinks it has a screen, allowing it to run in headed mode on a headless server.
+Python 3.9 or newer is required. Linux headed execution requires `xvfb`:
 
 ```bash
-# Debian / Ubuntu
 sudo apt-get install xvfb
 ```
 
----
-
-## ⚡ Quick Start
-
-Here is the minimal code to get started. This example navigates to a site and clicks a button safely.
+## Quick start
 
 ```python
 from sb_stealth_wrapper import StealthBot
 
-# Initialize the bot
-# Use success_criteria to tell the bot what text confirms the page is fully loaded/unlocked.
-with StealthBot(headless=False, success_criteria="Welcome") as bot:
-    
-    # 1. Navigate safely
-    bot.safe_get("https://example.com/protected-page")
-    
-    # 2. Click elements with auto-evasion
+with StealthBot(headless=False) as bot:
+    bot.safe_get("https://test.example.com/login")
     bot.smart_click("#login-button")
-    
-    # 3. Save a screenshot for debugging
-    bot.save_screenshot("debug_step_1")
+    bot.sb.wait_for_text("Dashboard", timeout=15)
+    bot.save_screenshot("after-login")
 ```
 
----
+Use the package only on systems you own or have explicit permission to test.
 
-## 🛠️ Detailed Usage & API Reference
+## Failure contract
 
-### `StealthBot` Class
+`safe_get()` returns only after one of these conditions is proven:
 
-The main entry point. Use it as a context manager (`with ...`) to ensure the browser closes properly.
+- the configured `success_criteria` text is visible; or
+- no challenge is detected and no explicit success criterion was requested.
+
+After three unsuccessful challenge-recovery attempts it performs one final state read and raises `ChallengeNotSolvedError` only if the challenge remains. When a page has no challenge but configured text remains absent after four bounded checks, it raises `SuccessCriteriaNotMetError`.
+
+`success_criteria` applies to the current navigation outcome. Do not configure text that can appear only after a future click; verify post-click state explicitly as shown above.
+
+`smart_click()` attempts:
+
+1. the configured input strategy;
+2. a standard SeleniumBase click;
+3. a JavaScript click;
+4. bounded challenge recovery and one final standard click.
+
+If those attempts fail, it raises `StealthBotError` instead of silently continuing.
+
+## API
 
 ```python
 StealthBot(
-    headless=False, 
-    proxy=None, 
+    headless=False,
+    proxy=None,
     screenshot_path="debug_screenshots",
-    success_criteria=None
+    success_criteria=None,
+    driver_strategy=None,
+    input_strategy=None,
+    evasion_strategy=None,
 )
 ```
 
-**Parameters:**
-- `headless` (bool): Defaults to `False`. **Recommended**. True headless mode is risky for stealth. On Linux, this is automatically managed (see *Core Concepts*).
-- `proxy` (str): Optional. Format: `user:pass@host:port`.
-- `screenshot_path` (str): Directory where screenshots are saved. Created automatically.
-- `success_criteria` (str): Optional. A specific string to wait for (e.g., "Dashboard", "Login Successful") which confirms that challenges are passed. If `None`, the bot relies on the *disappearance* of challenge words (like "Turnstile") to assume success.
+### `safe_get(url)`
 
-### `bot.safe_get(url)`
+Navigates to a URL, waits for the document body, checks known challenge indicators, and enforces the failure contract above.
 
-Navigates to a URL and immediately checks for challenges.
+### `smart_click(selector)`
 
-- **What it does**: Opens the URL → Waits for `<body>` → Checks for "Challenge"/"Turnstile" → auto-solves if found.
+Uses variable pre-click timing and SeleniumBase UC click behavior, then bounded fallbacks. The package does **not** claim Bezier mouse movement.
 
-### `bot.smart_click(selector)`
+### `smart_type(selector, text)`
 
-A stealthy alternative to standard clicks.
+Types with variable delays. The default strategy may insert and immediately correct an occasional typo.
 
-- **What it does**: 
-    1. Checks for challenges *before* clicking.
-    2. Scrolls the element into view.
-    3. waits for it to be visible.
-    4. Attempts a "Human" click (UC Mode).
-    5. **Fallbacks**: If the human click fails, it tries a standard Selenium click, then a JavaScript click, ensuring high reliability.
+### `save_screenshot(name)`
 
----
+Writes a PNG under `screenshot_path` and returns the resulting path.
 
----
+## Strategies
 
-## 🔧 Advanced Modular Usage (New in v0.4.0)
-
-StealthBot now uses a **Strategy Pattern**, allowing you to customize its behavior.
+The strategy interfaces remain injectable for application-specific testing:
 
 ```python
 from sb_stealth_wrapper import StealthBot
-from sb_stealth_wrapper.strategies.input import HumanInputStrategy
+from sb_stealth_wrapper.strategies.input import StandardInputStrategy
 
-# 1. Custom Input Strategy
-# You can tweak specific input behaviors if needed for different target sites.
-my_input = HumanInputStrategy() 
-
-# 2. Inject Strategies
-with StealthBot(input_strategy=my_input) as bot:
-    bot.safe_get("https://high-security-site.com")
-    # All clicks now use Bezier curves automatically
-    bot.smart_click("#login")
+with StealthBot(input_strategy=StandardInputStrategy()) as bot:
+    bot.safe_get("https://test.example.com")
 ```
 
-The bot comes with powerful defaults:
-- **CanvasPoisoningStrategy**: Randomizes canvas hash per session.
-- **AudioContextNoiseStrategy**: Randomizes audio fingerprint.
-- **HumanInputStrategy**: Physics-based mouse movements and human-like typing.
+Fingerprint mutation is disabled by default in 0.5.0. `CanvasPoisoningStrategy` and `AudioContextNoiseStrategy` remain experimental opt-in components; they do not promise stable or undetectable fingerprints.
 
-## 🧠 Core Concepts & Best Practices
+## Testing policy
 
-### The "Headed vs Headless" Dilemma
-Anti-bot systems (Cloudflare, Akamai, etc.) aggressively target "Headless Chrome". 
-- **Rule of Thumb**: ALWAYS run with `headless=False` for stealth.
-- **On Servers**: Use `xvfb` (as explained in Installation) to run `headless=False` on a server without a monitor. `StealthBot` detects Linux automatically and configures this for you!
+Deterministic unit tests and package builds run in required CI. Third-party anti-bot pages are unsuitable as release gates because their behavior can change independently of this package. Live checks belong in explicitly authorized manual testing, with real assertions and non-zero failure exits.
 
-### Challenge Handling Logic
-The bot uses a smart loop to handle challenges:
-1. **Detection**: It scans the page source for keywords: "challenge", "turnstile", "verify you are human".
-2. **Action**: If found, it uses SeleniumBase's `uc_gui_click_captcha` (simulating a real human mouse) to click the checkbox.
-3. **Verification**: 
-   - If `success_criteria="My Dashboard"` was passed, it waits until that text appears.
-   - If not, it waits until "challenge" text disappears.
+## Limitations
 
----
+- Bot-defense behavior varies by site, IP reputation, browser version, and policy.
+- Challenge detection is keyword-based and can produce false positives or false negatives.
+- The package does not bypass authorization, rate limits, access controls, or a site's terms.
+- `headless=False` generally offers behavior closer to an interactive browser; it is not a guarantee of acceptance.
 
-## ⚠️ Edge Cases & Troubleshooting
+## Development
 
-### 1. The Bot Gets Stuck in a Loop
-If the bot keeps clicking the challenge but it never solves:
-- **Solution**: The IP might be bad (if using a proxy), or the site needs a stronger interaction. Try increasing `time.sleep` in your own script or manually slowing down interactions.
-- `StealthBot` will try 3 times and then warn you ("Max retries reached") to prevent infinite hangs.
+```bash
+python -m pip install -e ".[dev]"
+python -m pytest -q
+python -m build
+python -m twine check dist/*
+```
 
-### 2. "Element Not Found" Errors
-`smart_click` is robust, but if the page is heavy with JavaScript:
-- Ensure you used `success_criteria` in `__init__` so the bot *really* waits for the page to be ready before trying to click.
+## License and responsible use
 
-### 3. CI/GitHub Actions Fails
-- **Did you install `xvfb`?** Check the prerequisites.
-- **Screen Size**: Sometimes elements are off-screen. The bot uses `scroll_to_element` automatically, but you can also try setting a window size explicitly using the underlying `bot.sb.set_window_size(1920, 1080)`.
+MIT. Created by [Dhiraj Das](https://www.dhirajdas.dev) and built on [SeleniumBase](https://github.com/seleniumbase/SeleniumBase).
 
----
-
-## Credits & Disclaimer
-
-Created by **[Dhiraj Das](https://www.dhirajdas.dev)** • Built on top of the incredible [SeleniumBase](https://github.com/seleniumbase/SeleniumBase) by **Michael Mintz**.
-
-**Ethical Use Only**: This tool is for testing your own infrastructure or sites you have permission to test. Do not use for unauthorized scraping or bypassing security controls on 3rd party services.
+Use only for legitimate QA, resilience testing, and automation on systems you are authorized to test. Do not use it for unauthorized scraping or to evade security controls on third-party services.

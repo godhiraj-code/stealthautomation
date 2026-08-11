@@ -5,12 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2026-08-11
+
+### Fixed
+- Verify page state after the final challenge-recovery action before deciding failure.
+- Raise `ChallengeNotSolvedError` when a challenge remains and `SuccessCriteriaNotMetError` when requested text remains absent.
+- Raise `StealthBotError` when all click and recovery attempts fail.
+- Make manual browser examples exit non-zero when expected outcomes are not proven.
+
+### Changed
+- Replace overstated stealth, Bezier-movement, and fingerprint-consistency claims with bounded behavior contracts.
+- Disable experimental canvas/audio mutation by default; custom strategies remain opt-in.
+- Replace third-party anti-bot pages as required CI gates with deterministic tests and package validation.
+- Require Python 3.9 or newer and modernize package metadata. This compatibility change is why the release is 0.5.0 rather than a patch.
+
+### Removed
+- Remove captured `debug_page_source.html` from the tracked source tree.
+
 ## [0.4.0] - 2026-01-10
 
 ### Added
 - **Modular Architecture**: Refactored monolithic class into a Strategy Pattern (`strategies/` package).
-- **Behavioral Biometrics**: `HumanInputStrategy` implementing cubic Bezier curve mouse movements and variable typing with typos.
-- **Active Fingerprint Evasion**: `CanvasPoisoningStrategy` and `AudioContextNoiseStrategy` to mask WebDriver fingerprints.
+- `HumanInputStrategy` with variable click/typing timing and corrected typos. The original Bezier claim was inaccurate and is corrected in 0.5.0.
+- Experimental `CanvasPoisoningStrategy` and `AudioContextNoiseStrategy`; stable fingerprinting was not proven and these become opt-in in 0.5.0.
 - `stealth_showcase.py` example to demonstrate new capabilities.
 
 ### Changed

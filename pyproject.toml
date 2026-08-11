@@ -1,38 +1,35 @@
 [build-system]
-requires = ["setuptools>=61.0"]
+requires = ["setuptools>=77.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "sb-stealth-wrapper"
-version = "0.4.0"
-description = "A robust, plug-and-play wrapper around SeleniumBase UC Mode for stealth web automation."
+version = "0.5.0"
+description = "Reliability wrapper around SeleniumBase UC Mode for authorized browser testing."
 readme = "README.md"
-license = {text = "MIT"}
-authors = [
-    {name = "Dhiraj Das", email = "dhirajdas.666@gmail.com"}
-]
-requires-python = ">=3.8"
+license = "MIT"
+authors = [{name = "Dhiraj Das"}]
+requires-python = ">=3.9"
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Topic :: Software Development :: Testing",
     "Topic :: Internet :: WWW/HTTP :: Browsers",
 ]
-keywords = ["selenium", "stealth", "automation", "bot-detection", "cloudflare", "turnstile", "web-scraping", "testing"]
+keywords = ["selenium", "seleniumbase", "browser-testing", "qa", "test-automation", "reliability"]
 dependencies = [
     "seleniumbase>=4.20.0",
 ]
 
 [project.urls]
-Homepage = "https://www.dhirajdas.dev"
+Homepage = "https://www.dhirajdas.dev/project/sb-stealth-wrapper"
 Repository = "https://github.com/godhiraj-code/stealthautomation"
 Documentation = "https://github.com/godhiraj-code/stealthautomation#readme"
 "Bug Tracker" = "https://github.com/godhiraj-code/stealthautomation/issues"
@@ -40,10 +37,11 @@ Documentation = "https://github.com/godhiraj-code/stealthautomation#readme"
 [project.optional-dependencies]
 dev = [
     "pytest>=7.0.0",
-    "black>=23.0.0",
-    "isort>=5.12.0",
-    "mypy>=1.0.0",
+    "black>=25.0.0,<27; python_version >= '3.10'",
+    "isort>=6.0.0,<9; python_version >= '3.10'",
+    "mypy>=1.18.0,<2; python_version >= '3.10'",
 ]
+benchmark = ["playwright>=1.50.0,<2"]
 
 [tool.setuptools.packages.find]
 where = ["."]
@@ -51,13 +49,14 @@ include = ["sb_stealth_wrapper*"]
 
 [tool.black]
 line-length = 100
-target-version = ["py38", "py39", "py310", "py311", "py312"]
+target-version = ["py39", "py310", "py311", "py312", "py313"]
 
 [tool.isort]
 profile = "black"
 line_length = 100
 
 [tool.mypy]
-python_version = "3.8"
+python_version = "3.9"
+ignore_missing_imports = true
 warn_return_any = true
 warn_unused_configs = true

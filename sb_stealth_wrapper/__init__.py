@@ -262,9 +262,13 @@ class StealthBot:
             return "<unparseable destination>"
 
     def save_screenshot(self, name: str) -> str:
-        """Save a screenshot."""
+        """Save a screenshot using a plain filename stem."""
         self._ensure_initialized()
         if self.screenshot_path:
+            if not name or name in {".", ".."} or "/" in name or "\\" in name:
+                raise ValueError(
+                    "Screenshot name must be a plain filename stem without path separators."
+                )
             filename = os.path.join(self.screenshot_path, f"{name}.png")
             self.sb.save_screenshot(filename)  # type: ignore
             return filename

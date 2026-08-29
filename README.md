@@ -13,7 +13,8 @@ SB Stealth Wrapper standardizes browser setup, bounded challenge recovery, expli
 python -m pip install sb-stealth-wrapper
 ```
 
-Python 3.9 or newer is required. Linux headed execution requires `xvfb`:
+Python 3.9 or newer is required. On Linux, `headless=True` runs without a virtual display;
+headed execution (`headless=False`) requires `xvfb`:
 
 ```bash
 sudo apt-get install xvfb
@@ -81,7 +82,8 @@ Types with variable delays. The default strategy may insert and immediately corr
 
 ### `save_screenshot(name)`
 
-Writes a PNG under `screenshot_path` and returns the resulting path.
+Writes `<name>.png` under `screenshot_path` and returns the resulting path. `name` must be a
+plain filename stem, not a path; path separators are rejected.
 
 ## Strategies
 
@@ -111,11 +113,18 @@ Deterministic unit tests and package builds run in required CI. Third-party anti
 ## Development
 
 ```bash
-python -m pip install -e ".[dev]"
+python -m pip install -c requirements-ci.txt -e ".[dev]" build twine
 python -m pytest -q
+python -m black --fast --check sb_stealth_wrapper tests examples
+python -m isort --check-only sb_stealth_wrapper tests examples
+python -m mypy sb_stealth_wrapper
+python -m compileall -q sb_stealth_wrapper tests
 python -m build
 python -m twine check dist/*
 ```
+
+Set `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1` when you want the same isolated pytest-plugin behavior
+used by CI.
 
 ## License and responsible use
 

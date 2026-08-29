@@ -95,8 +95,10 @@ class TestStealthBotInit:
 
     @patch("sb_stealth_wrapper.driver.platform.system")
     @patch("sb_stealth_wrapper.driver.SB")
-    def test_linux_detection_enables_xvfb(self, mock_sb: MagicMock, mock_system: MagicMock) -> None:
-        """Test that Linux detection enables Xvfb and forces headed mode."""
+    def test_linux_headless_mode_does_not_enable_xvfb(
+        self, mock_sb: MagicMock, mock_system: MagicMock
+    ) -> None:
+        """Linux headless mode should remain headless and avoid an Xvfb dependency."""
         mock_system.return_value = "Linux"
 
         # We need to initialize the bot and enter the context to trigger driver.initialize()
@@ -104,7 +106,23 @@ class TestStealthBotInit:
         with bot:
             pass
 
-        # Verify SB was initialized with correct arguments (xvfb=True, headless=False)
+        # Verify the caller's headless setting is honored.
+        mock_sb.assert_called_once()
+        _, kwargs = mock_sb.call_args
+        assert kwargs["xvfb"] is False
+        assert kwargs["headless"] is True
+
+    @patch("sb_stealth_wrapper.driver.platform.system")
+    @patch("sb_stealth_wrapper.driver.SB")
+    def test_linux_headed_mode_enables_xvfb(
+        self, mock_sb: MagicMock, mock_system: MagicMock
+    ) -> None:
+        """Linux headed mode should use Xvfb."""
+        mock_system.return_value = "Linux"
+
+        with StealthBot(headless=False):
+            pass
+
         mock_sb.assert_called_once()
         _, kwargs = mock_sb.call_args
         assert kwargs["xvfb"] is True
@@ -139,6 +157,20 @@ class TestStealthBotContextManager:
         bot = StealthBot()
         with pytest.raises(RuntimeError, match="context manager"):
             bot.smart_click("#button")
+
+
+class TestScreenshots:
+    @pytest.mark.parametrize("name", ["../outside", "..\\outside", "/outside", "\\outside"])
+    def test_save_screenshot_rejects_path_traversal(
+        self, tmp_path: pytest.TempPathFactory, name: str
+    ) -> None:
+        bot = StealthBot(screenshot_path=str(tmp_path))
+        bot.sb = MagicMock()
+
+        with pytest.raises(ValueError, match="plain filename stem"):
+            bot.save_screenshot(name)
+
+        bot.sb.save_screenshot.assert_not_called()
 
 
 class TestStealthBotClassConstants:

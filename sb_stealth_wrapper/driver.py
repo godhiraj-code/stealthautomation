@@ -1,5 +1,4 @@
 import logging
-import os
 import platform
 from typing import Any, Optional
 
@@ -19,13 +18,10 @@ class SeleniumBaseDriver(DriverStrategy):
 
     def initialize(self, headless: bool = False, proxy: Optional[str] = None) -> Any:
         is_linux = platform.system() == "Linux"
-        xvfb = False
+        xvfb = is_linux and not headless
 
-        if is_linux:
-            # Smart headless handling for Linux
+        if xvfb:
             logger.info("Linux/CI detected: using Xvfb with headed mode.")
-            xvfb = True
-            headless = False
 
         self._sb_context = SB(
             uc=True, headless=headless, xvfb=xvfb, proxy=proxy, test=False, rtf=False

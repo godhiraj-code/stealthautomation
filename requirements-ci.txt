@@ -1,0 +1,7 @@
+# Direct release-tool and test pins. Transitive dependencies remain resolved by pip.
+seleniumbase==4.51.12
+black==25.11.0
+isort==6.1.0
+mypy==1.18.2
+build==1.3.0
+twine==6.2.0

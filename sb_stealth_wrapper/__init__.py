@@ -119,8 +119,16 @@ class StealthBot:
         self.sb = self.driver_strategy.initialize(headless=self.headless, proxy=self.proxy)
 
         # Apply Evasion Strategies immediately after launch
-        if self.sb:
-            self.evasion_strategy.apply(self.sb)
+        try:
+            if self.sb:
+                self.evasion_strategy.apply(self.sb)
+        except BaseException:
+            # Python does not call __exit__ when __enter__ raises.
+            try:
+                self.driver_strategy.cleanup()
+            finally:
+                self.sb = None
+            raise
 
         logger.debug("StealthBot initialized successfully (Modular Mode)")
         return self
@@ -132,7 +140,10 @@ class StealthBot:
         exc_tb: Optional[TracebackType],
     ) -> None:
         """Context manager exit."""
-        self.driver_strategy.cleanup()
+        try:
+            self.driver_strategy.cleanup()
+        finally:
+            self.sb = None
         logger.debug("StealthBot closed successfully")
 
     def _ensure_initialized(self) -> None:

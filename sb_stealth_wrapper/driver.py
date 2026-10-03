@@ -30,5 +30,8 @@ class SeleniumBaseDriver(DriverStrategy):
         return self.sb
 
     def cleanup(self) -> None:
-        if self._sb_context:
-            self._sb_context.__exit__(None, None, None)
+        context = self._sb_context
+        self._sb_context = None
+        self.sb = None
+        if context:
+            context.__exit__(None, None, None)

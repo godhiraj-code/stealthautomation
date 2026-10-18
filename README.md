@@ -130,4 +130,6 @@ used by CI.
 
 MIT. Created by [Dhiraj Das](https://www.dhirajdas.dev) and built on [SeleniumBase](https://github.com/seleniumbase/SeleniumBase).
 
+[Follow @dkkkkd on X](https://x.com/dkkkkd)
+
 Use only for legitimate QA, resilience testing, and automation on systems you are authorized to test. Do not use it for unauthorized scraping or to evade security controls on third-party services.

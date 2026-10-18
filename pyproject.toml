@@ -33,6 +33,7 @@ Homepage = "https://www.dhirajdas.dev/project/sb-stealth-wrapper"
 Repository = "https://github.com/godhiraj-code/stealthautomation"
 Documentation = "https://github.com/godhiraj-code/stealthautomation#readme"
 "Bug Tracker" = "https://github.com/godhiraj-code/stealthautomation/issues"
+"X" = "https://x.com/dkkkkd"
 
 [project.optional-dependencies]
 dev = [
